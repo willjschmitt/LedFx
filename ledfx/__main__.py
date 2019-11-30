@@ -85,7 +85,7 @@ def main():
     config_helpers.ensure_config_directory(args.config)
     setup_logging(args.loglevel)
 
-    ledfx = LedFxCore(config_dir = args.config)
+    ledfx = LedFxCore.from_config_directory(config_dir = args.config)
     ledfx.start(open_ui = args.open_ui)
 
 if __name__ == "__main__":

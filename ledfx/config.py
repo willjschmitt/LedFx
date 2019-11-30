@@ -40,6 +40,11 @@ def create_default_config(config_dir: str) -> str:
     """Creates a default configuration in the provided directory"""
 
     config_path = os.path.join(config_dir, CONFIG_FILE_NAME)
+    return create_default_config_at_path(config_path)
+
+def create_default_config_at_path(config_path: str) -> str:
+    """Creates a default configuration at the specific path."""
+
     try:
         with open(config_path, 'wt') as config_file:
             config_file.write(DEFAULT_CONFIG)
@@ -49,13 +54,23 @@ def create_default_config(config_dir: str) -> str:
         print(('Unable to create default configuration file {}').format(config_path))
         return None
 
+
 def ensure_config_file(config_dir: str) -> str:
     """Checks if a config file exsit, and otherwise creates one"""
 
     ensure_config_directory(config_dir)
     config_path = get_config_file(config_dir)
+    return ensure_config_file_at_path(config_path)
+
+
+def ensure_config_file_at_path(config_path: str) -> str:
+    """Checks if a config file exists at a specific path.
+
+    If it does not exist, creates one.
+    """
+
     if config_path is None:
-        config_path = create_default_config(config_dir)
+        config_path = create_default_config(config_path)
         print(('Failed to find configuration file. Creating default configuration '
             'file in {}').format(config_path))
 
@@ -82,7 +97,13 @@ def load_config(config_dir: str) -> dict:
     """Validates and loads the configuration file in the provided directory"""
 
     config_file = ensure_config_file(config_dir)
-    print(('Loading configuration file from {}').format(config_dir))
+    return load_config_from_path(config_file)
+
+def load_config_from_path(config_path: str) -> dict:
+    """Validates and loads the configuration file from a specific path."""
+
+    config_file = ensure_config_file_at_path(config_path)
+    print(('Loading configuration file from {}').format(config_path))
     with open(config_file, 'rt') as file:
         return CORE_CONFIG_SCHEMA(yaml.load(file))
 
@@ -90,6 +111,11 @@ def save_config(config: dict, config_dir: str) -> None:
     """Saves the configuration to the provided directory"""
 
     config_file = ensure_config_file(config_dir)
-    _LOGGER.info(('Saving configuration file to {}').format(config_dir))
-    with open(config_file, 'w') as file:
+    return save_config_to_path(config, config_file)
+
+def save_config_to_path(config: dict, config_path: str) -> None:
+    """Saves the configuration to a specific path."""
+
+    _LOGGER.info(('Saving configuration file to {}').format(config_path))
+    with open(config_path, 'w') as file:
         yaml.dump(config, file, default_flow_style=False)

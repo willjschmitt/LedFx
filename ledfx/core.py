@@ -11,16 +11,21 @@ from ledfx.utils import async_fire_and_forget
 from ledfx.http import HttpServer
 from ledfx.devices import Devices
 from ledfx.effects import Effects
-from ledfx.config import load_config, save_config
+from ledfx.config import load_config, load_config_from_path
+from ledfx.config import save_config, save_config_to_path
 from ledfx.events import Events, LedFxShutdownEvent
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class LedFxCore(object):
-    def __init__(self, config_dir):
-        self.config_dir = config_dir
-        self.config = load_config(config_dir)
+    def __init__(self, config):
+        self.config = config
+
+        # Allows for saving a configuration if specified in the creation of this
+        # object.
+        self.config_dir = None
+        self.config_path = None
 
         if sys.platform == 'win32':
             self.loop = asyncio.ProactorEventLoop()
@@ -36,6 +41,18 @@ class LedFxCore(object):
         self.http = HttpServer(
             ledfx=self, host=self.config['host'], port=self.config['port'])
         self.exit_code = None
+
+    @classmethod
+    def from_config_directory(cls, config_dir):
+        config = load_config(config_dir)
+        ledfx_core = cls(config)
+        ledfx_core.config_dir = config_dir
+
+    @classmethod
+    def from_config_path(cls, config_path):
+        config = load_config_from_path(config_path)
+        ledfx_core = cls(config)
+        ledfx_core.config_path = config_path
 
     def dev_enabled(self):
         return self.config['dev_mode'] == True
@@ -122,7 +139,10 @@ class LedFxCore(object):
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Save the configuration before shutting down
-        save_config(config=self.config, config_dir=self.config_dir)
+        if self.config_dir is not None:
+            save_config(config=self.config, config_dir=self.config_dir)
+        if self.config_path is not None:
+            save_config_to_path(config=self.config, config_path=self.config_path)
 
         await self.flush_loop()
         self.executor.shutdown()
